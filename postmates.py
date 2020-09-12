@@ -14,62 +14,65 @@ app.secret_key = os.urandom(24)
 
 @app.route('/')
 def index():
-    return redirect(url_for('order'))
+  return redirect(url_for('order'))
 
 @app.route('/order/')
 def order():
-    with open('order.json') as f:
-        order = json.load(f)
-        session['order'] = order
-    
-    payload = {
-      'pickup_address': order['pickup']['address'], 
-      'dropoff_address': order['dropoff']['address']
-    }
-
-    quote_response = requests.post(constants.QUOTE_ENDPOINT, data=payload, auth=(constants.API_KEY, ''))
+  with open('order.json') as f:
+    order = json.load(f)
+    session['order'] = order
+  
+  payload = {
+    'pickup_address': order['pickup']['address'], 
+    'dropoff_address': order['dropoff']['address']
+  }  
+  quote_response = requests.post(constants.QUOTE_ENDPOINT, data=payload, auth=(constants.API_KEY, ''))
+  
+  if quote_response.status_code == requests.codes.ok:
     quote = quote_response.json()    
-    session['quote_id'] = quote['id']
-
+    session['quote_id'] = quote['id']  
     return render_template('order.html', order=order, quote=quote)
+  else:
+    quote_response.raise_for_status()    
 
 @app.route('/delivery/')
 def delivery():
-    if 'quote_id' and 'order' in session:
-        order = session['order']
-        payload = {
-          'dropoff_address': order['dropoff']['address'], 
-          'dropoff_name': order['dropoff']['name'], 
-          'dropoff_phone_number': order['dropoff']['phone_number'], 
-          'manifest':'fancy hot selling socks', 
-          'pickup_name': order['pickup']['name'],
-          'pickup_address': order['pickup']['address'],
-          'pickup_phone_number': order['pickup']['phone_number']
-        }
-        delivery_response = requests.post(constants.DELIVERY_ENDPOINT, data=payload, auth=(constants.API_KEY, ''))
-        print "delivery_response ", delivery_response.content
-        return render_template('delivery.html', delivery=delivery_response.json(), order=order)    
-    else:
-        return redirect(url_for('order'))
-
+  if 'quote_id' and 'order' in session:
+    order = session['order']
+    payload = {
+      'dropoff_address': order['dropoff']['address'], 
+      'dropoff_name': order['dropoff']['name'], 
+      'dropoff_phone_number': order['dropoff']['phone_number'], 
+      'manifest':'fancy hot selling socks', 
+      'pickup_name': order['pickup']['name'],
+      'pickup_address': order['pickup']['address'],
+      'pickup_phone_number': order['pickup']['phone_number']
+    }
+    delivery_response = requests.post(constants.DELIVERY_ENDPOINT, data=payload, auth=(constants.API_KEY, ''))  
+    if delivery_response.status_code == requests.codes.ok:
+      return render_template('delivery.html', delivery=delivery_response.json(), order=order)    
+    else: 
+      delivery_response.raise_for_status()     
+  else:
+      return redirect(url_for('order'))  
 
 def parse_isodate(timestamp):
-    tz = pytz.timezone('US/Pacific')
-    return iso8601.parse_date(timestamp).astimezone(tz)
+  tz = pytz.timezone('US/Pacific')
+  return iso8601.parse_date(timestamp).astimezone(tz)
 
 @app.template_filter('currency')
 def currency(value):
-    value = float(value)/100
-    return "${:,.2f}".format(value)
+  value = float(value)/100
+  return "${:,.2f}".format(value)
 
 @app.template_filter('format_datetime')
 def format_datetime(value):
-    return parse_isodate(value).strftime('%m/%d/%y @ %I:%M %p')
+  return parse_isodate(value).strftime('%m/%d/%y @ %I:%M %p')
 
 @app.context_processor
 def utility_processor():
-    def time_from_now(value):
-        now = datetime.datetime.now()
-        timedelta = parse_isodate(value).replace(tzinfo=None) - now
-        return  '%s minutes from now' % int(timedelta.total_seconds() / 60)
-    return dict(time_from_now=time_from_now)
+  def time_from_now(value):
+    now = datetime.datetime.now()
+    timedelta = parse_isodate(value).replace(tzinfo=None) - now
+    return  '%s minutes from now' % int(timedelta.total_seconds() / 60)
+  return dict(time_from_now=time_from_now)
