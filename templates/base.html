@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    {% block head %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %} - Postmates</title>
+    {% endblock %}
+  </head>
+  <style>
+    .button-gray {
+      background-color: gray;
+      border-radius: 4px;
+      color: white;
+      font-size: 16px;
+      padding: 10px 20px;
+      text-decoration: none;
+    }  
+
+    .small{ 
+      color: gray;
+      font-weight: normal;
+      font-size: 14px;
+    }
+    </style>
+  <body>
+    {% block content %}{% endblock %}
+  </body>
+</html>

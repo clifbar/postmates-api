@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Delivery Summary{% endblock %}
+
+{% block content %}
+  <h1>Your delivery details</h1>
+  <div>Order: <a href="/order" class="small">{{order.uuid}}</a></div>
+  <div>Status: {{delivery.status}}</div>
+  <br>
+  <div>Fee: {{delivery.fee|currency}}</div>
+  <div>Pickup by: {{delivery.pickup_deadline|format_datetime}}</div>
+  <br>
+  <div>Your Delivery time: {{delivery.dropoff_eta|format_datetime}}</div>
+  <br>
+  
+  <div>Deliver to: {{delivery.dropoff.address}}</div>
+  <br>
+  <div>
+    You can track your deliver here:  
+    <a href="{{delivery.tracking_url}}" target="_blank">{{delivery.tracking_url}}</a>
+  </div>  
+{% endblock %}
